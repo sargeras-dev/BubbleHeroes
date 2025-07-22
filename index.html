@@ -1,181 +1,40 @@
 <!DOCTYPE html>
 <html lang="en-us">
- <head>
-   <meta charset="utf-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Unity WebGL Player</title>
-   <script src="scripts/dapp_portal_sdk.js"></script>
-   <style>
-     body { margin: 0; padding: 0; }
-     #unity-container { width: 100%; height: 100%; position: absolute; }
-     #unity-canvas { width: 100%; height: 100%; background: #231F20; }
-     #unity-loading-bar { display: none; }
-     #unity-progress-bar-empty { width: 141px; height: 18px; margin-top: 10px; background: url('Build/minidapp.progress-bar-empty-dark.png') no-repeat center; }
-     #unity-progress-bar-full { width: 0%; height: 18px; margin-top: 10px; background: url('Build/minidapp.progress-bar-full-dark.png') no-repeat center; }
-   </style>
- </head>
- <body>
-   <div id="unity-container">
-     <canvas id="unity-canvas"></canvas>
-     <div id="unity-loading-bar">
-       <div id="unity-progress-bar-empty">
-         <div id="unity-progress-bar-full"></div>
-       </div>
-     </div>
-   </div>
-   <script src="Build/BubbleHeroes.loader.js"></script>
-   <script>
-     var sdk = null;
-     var connectedAddress = null;
-     var myGameInstance = null;
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | Bubble Heroes</title>
+  </head>
+  <body style="text-align: center; padding: 0; border: 0; margin: 0;">
+    <canvas id="unity-canvas" width=640 height=1136 tabindex="-1" style="width: 640px; height: 1136px; background: #231F20"></canvas>
+    <script src="Build/BubbleHeroes.loader.js"></script>
+    <script>
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
 
-     var Module = {
-       onRuntimeInitialized: function() {
-         console.log("Runtime initialized");
-       },
-       env: {
-         MintToken: function(amount) {
-           window.MintToken(amount);
-         },
-         GetBalance: function() {
-           window.GetBalance();
-         },
-         ConnectWallet: function() {
-           window.ConnectWallet();
-         },
-         DisconnectWallet: function() {
-          window.DisconnectWallet();
-         },
-         GetConnectedAddress: function() {
-           var address = window.GetConnectedAddress();
-           var bufferSize = lengthBytesUTF8(address) + 1;
-           var buffer = _malloc(bufferSize);
-           stringToUTF8(address, buffer, bufferSize);
-           return buffer;
-         }
-       }
-     };
+        var canvas = document.querySelector("#unity-canvas");
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.position = "fixed";
 
-     async function initializeSDK() {
-       try {
-         sdk = await DappPortalSDK.init({
-           clientId: 'c35de0c1-cfc3-4eb9-aa24-0f343a9c1429',
-           chainId: '1001'
-         });
-         console.log("SDK initialized");
-         return true;
-       } catch (error) {
-         console.error("SDK init error:", error);
-         return false;
-       }
-     }
+        document.body.style.textAlign = "left";
+      }
 
-     window.ConnectWallet = async function() {
-       try {
-         if (!sdk) {
-           const initialized = await initializeSDK();
-           if (!initialized) return null;
-         }
-
-         const provider = sdk.getWalletProvider();
-         const accounts = await provider.request({ method: 'kaia_requestAccounts' });
-
-         if (accounts && accounts.length > 0) {
-           connectedAddress = accounts[0];
-           myGameInstance.SendMessage('Web3Manager', 'OnWalletConnected', connectedAddress);
-         }
-       } catch (error) {
-         myGameInstance.SendMessage('Web3Manager', 'OnWalletError', error.message);
-       }
-     }
-
-     window.DisconnectWallet = async function() {
-       try {
-         if (!sdk) {
-           console.error("SDK not initialized");
-           return;
-         }
-
-         const provider = sdk.getWalletProvider();
-         await provider.disconnect();
-         
-         // Reset connected address
-         connectedAddress = null;
-         myGameInstance.SendMessage('Web3Manager', 'OnWalletDisconnected');
-         console.log("Wallet disconnected successfully");
-       } catch (error) {
-         console.error("Disconnect error:", error);
-         myGameInstance.SendMessage('Web3Manager', 'OnWalletError', "Disconnect failed: " + error.message);
-       }
-     }
-
-     window.GetConnectedAddress = function() {
-       return connectedAddress || '';
-     }
-
-     window.MintToken = async function(amount) {
-       try {
-         const provider = sdk.getWalletProvider();
-
-         const mintSignature = '0xa0712d68';
-         const amountHex = amount.toString(16).padStart(64, '0');
-         const data = mintSignature + amountHex;
-
-         const tx = {
-           from: connectedAddress,
-           to: '0x099D7feC4f799d1749adA8815eB21375E13E0Ddb',
-           value: '0x0',
-           data: data,
-           gas: '0x4C4B40'
-         };
-
-         const txHash = await provider.request({
-           method: 'kaia_sendTransaction',
-           params: [tx]
-         });
-
-         myGameInstance.SendMessage('Web3Manager', 'OnMintSuccess', txHash);
-         GetBalance(); // Get updated balance after mint
-       } catch (error) {
-         myGameInstance.SendMessage('Web3Manager', 'OnMintError', error.message);
-       }
-     }
-
-     window.GetBalance = async function() {
-       try {
-         const provider = sdk.getWalletProvider();
-
-         const balanceSignature = '0x70a08231';
-         const addressParam = connectedAddress.substring(2).padStart(64, '0');
-         const data = balanceSignature + addressParam;
-
-         const result = await provider.request({
-           method: 'kaia_call',
-           params: [{
-             from: connectedAddress,
-             to: '0x099D7feC4f799d1749adA8815eB21375E13E0Ddb',
-             data: data
-           }, 'latest']
-         });
-
-         const balance = parseInt(result, 16);
-         myGameInstance.SendMessage('Web3Manager', 'OnBalanceReceived', balance.toString());
-       } catch (error) {
-         myGameInstance.SendMessage('Web3Manager', 'OnBalanceError', error.message);
-       }
-     }
-
-     createUnityInstance(document.querySelector("#unity-canvas"), {
-       dataUrl: "Build/BubbleHeroes.data",
-       frameworkUrl: "Build/BubbleHeroes.framework.js",
-       codeUrl: "Build/BubbleHeroes.wasm",
-       streamingAssetsUrl: "StreamingAssets",
-       companyName: "DefaultCompany",
-       productName: "minidapp",
-       productVersion: "0.1",
-     }).then((unityInstance) => {
-       myGameInstance = unityInstance;
-     });
-   </script>
- </body>
+      createUnityInstance(document.querySelector("#unity-canvas"), {
+        dataUrl: "Build/BubbleHeroes.data",
+        frameworkUrl: "Build/BubbleHeroes.framework.js",
+        codeUrl: "Build/BubbleHeroes.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "HappyStudio",
+        productName: "Bubble Heroes",
+        productVersion: "1.0",
+        // matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
+        // devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
+      });
+    </script>
+  </body>
 </html>
