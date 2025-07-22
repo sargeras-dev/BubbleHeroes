@@ -2096,13 +2096,13 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  4261856: function() {return Module.webglContextAttributes.premultipliedAlpha;},  
- 4261917: function() {return Module.webglContextAttributes.preserveDrawingBuffer;},  
- 4261981: function() {return Module.webglContextAttributes.powerPreference;},  
- 4262039: function() {Module['emscripten_get_now_backup'] = performance.now;},  
- 4262094: function($0) {performance.now = function() { return $0; };},  
- 4262142: function($0) {performance.now = function() { return $0; };},  
- 4262190: function() {performance.now = Module['emscripten_get_now_backup'];}
+  4261888: function() {return Module.webglContextAttributes.premultipliedAlpha;},  
+ 4261949: function() {return Module.webglContextAttributes.preserveDrawingBuffer;},  
+ 4262013: function() {return Module.webglContextAttributes.powerPreference;},  
+ 4262071: function() {Module['emscripten_get_now_backup'] = performance.now;},  
+ 4262126: function($0) {performance.now = function() { return $0; };},  
+ 4262174: function($0) {performance.now = function() { return $0; };},  
+ 4262222: function() {performance.now = Module['emscripten_get_now_backup'];}
 };
 
 
@@ -2249,10 +2249,6 @@ var ASM_CONSTS = {
       if (Module['extraStackTrace']) js += '\n' + Module['extraStackTrace']();
       return demangleAll(js);
     }
-
-  function _ConnectWallet() {
-          window.ConnectWallet();
-      }
 
   function _DisconnectWallet() {
           window.DisconnectWallet();
@@ -16078,7 +16074,6 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var asmLibraryArg = {
-  "ConnectWallet": _ConnectWallet,
   "DisconnectWallet": _DisconnectWallet,
   "GetBalance": _GetBalance,
   "GetJSMemoryInfo": _GetJSMemoryInfo,
